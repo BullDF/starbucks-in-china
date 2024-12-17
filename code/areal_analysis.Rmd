@@ -4,11 +4,78 @@ library(tidyverse)
 library(leaflet)
 library(sf)
 data_dir <- "../clean_data/"
+maps_dir <- "../maps/"
 ```
 
 ```{r}
-starbucks <- read_csv(paste0(data_dir, "starbucks.csv"))
+starbucks <- read_csv(paste0(data_dir, "starbucks.csv")) |>
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
 starbucks
 
+provinces <- st_read(paste0(maps_dir, "2019年省级.shp")) |>
+  select(ENG_NAME) |>
+  rename(Province = ENG_NAME) |>
+  filter(!(Province %in% c("Taiwan", "HongKong", "Aomen", "Hainan"))) |>
+  mutate(Province = case_when(
+    Province == "Xizang" ~ "Tibet",
+    Province == "Neimenggu" ~ "Inner Mongolia",
+    TRUE ~ Province
+  ))
+provinces
+```
 
+```{r}
+leaflet() |>
+  addProviderTiles("CartoDB.Positron") |>
+  addCircles(
+    data = starbucks,
+    color = "darkgreen",
+    fillColor = "darkgreen"
+  ) |>
+  addPolygons(
+    data = provinces,
+    weight = 1.5,
+    color = "darkgray",
+    opacity = 1,
+    label = provinces$Province
+  )
+```
+
+```{r}
+starbucks_provinces <- st_join(starbucks, provinces, left = FALSE)
+starbucks_provinces
+```
+
+```{r}
+starbucks_prov_count <- starbucks_provinces |>
+  st_drop_geometry() |>
+  group_by(Province) |>
+  summarize(count = n()) |>
+  left_join(provinces, by = "Province") |>
+  st_as_sf()
+```
+
+```{r}
+starbucks_count_pal <- colorNumeric(
+  palette = "viridis",
+  domain = starbucks_prov_count$count
+)
+
+leaflet() |>
+  addProviderTiles("CartoDB.Positron") |>
+  addPolygons(
+    data = starbucks_prov_count,
+    weight = 1.5,
+    color = "darkgray",
+    opacity = 1,
+    fillOpacity = 0.7,
+    fillColor = ~starbucks_count_pal(count),
+    label = paste(starbucks_prov_count$Province, starbucks_prov_count$count)
+  ) |>
+  addLegend(
+    pal = starbucks_count_pal,
+    values = starbucks_prov_count$count,
+    title = "Starbucks Count",
+    position = "bottomright"
+  )
 ```
