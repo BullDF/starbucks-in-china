@@ -1,0 +1,47 @@
+
+```{r}
+library(tidyverse)
+library(leaflet)
+library(sf)
+setwd("/Users/bulldf/University of Toronto/2024 Fall/STA465/project")
+```
+
+```{r}
+df <- read_csv("starbucks.csv")
+
+df |> select(longitude) |> is.na() |> sum()
+```
+
+```{r}
+df |>
+  leaflet() |>
+  addProviderTiles("CartoDB.Positron") |>
+  addCircles(
+    lng = ~longitude,
+    lat = ~latitude,
+  )
+```
+
+```{r}
+shp <- st_read("maps/2019年省级.shp", crs = 4326)
+shp |> names()
+shp |> select(省级) |> st_drop_geometry() |> unique()
+shp
+```
+
+```{r}
+shp |>
+  leaflet() |>
+  addProviderTiles("CartoDB.Positron") |>
+  addPolygons(
+    color = "darkgray",
+    opacity = 1,
+    weight = 1.5
+  )
+shp$CNAME3
+```
+
+```{r}
+json <- st_read("gadm36_CHN_1.json")
+json
+```

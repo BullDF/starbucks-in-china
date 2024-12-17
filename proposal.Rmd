@@ -1,0 +1,216 @@
+---
+title: Starbucks in China -- A Spatial Analysis with Socioeconomic & Demographic Data
+subtitle: STA465 Project Proposal
+author: Yuwei (Johnny) Meng
+date: 6 Nov 2024
+output: html_document
+---
+
+```{r, echo=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  results = FALSE
+)
+setwd("/Users/bulldf/University of Toronto/2024 Fall/STA465/project")
+```
+
+```{r}
+library(tidyverse)
+library(sf)
+library(leaflet)
+```
+
+```{r}
+starbucks <- read_csv("starbucks.csv")
+starbucks |> names()
+starbucks
+```
+
+# Introduction
+
+As globalization continues, the presence of multinational corporations becomes increasingly prominent worldwide, among which Starbucks is definitely one of the most successful companies that expands its business to many countries, including China. As of 31 December 2019, there were already `r nrow(starbucks)` Starbucks stores in total in Mainland China, spanning over 168 cities and occupying a large portion of the Chinese coffee market, and the number is still growing today.
+
+To understand the success of Starbucks in China, a great starting point is to analyze the spatial patterns in the Starbucks stores in China. Therefore, given a dataset consisting of the locations of Starbucks stores in China, this study aims to use techniques in spatial statistics to discover spatial patterns within the data. To make the spatial models more convincing and have more practical implications, socioeconomic factors, such as GDP of the provinces, and demographic factors, like population, will also be included in the spatial models as covariates.
+
+In addition, Shanghai, being one of the most developed cities in China, has notably a large number of Starbucks stores compared to other cities. Hence, it is naturally tempting to delve into Shanghai and focus on finding spatial patterns in the locations of Starbucks stores in Shanghai specifically.
+
+Ultimately, this project aims to achieve the following objectives and answer the following research questions:
+
+1. On a province or city scale, find spatial patterns in the number of Starbucks stores between spatial blocks. Is there a positive or negative autocorrelation in the number of Starbucks stores in neighboring spatial blocks? Can we construct spatial models that include socioeconomic and demographic data to predict the number of Starbucks stores in a spatial block?
+
+2. In the Shanghai city, there appears to be a dense distribution of Starbucks stores, especially in the city center. Can we come up with models that spatially cluster Starbucks stores in Shanghai? Is there an association between the presence of Starbucks stores and the population and area of Shanghai on a district level?
+
+By addressing the points above, we can build a holistic picture of Starbucks' development in China.
+
+# Data
+
+Currently most of my datasets presented below are in Chinese. I will be providing some translation for the presentation below, and will translate everything into English when I start data wrangling for the actual project.
+
+### Starbucks Stores in Mainland China
+
+The starting point of this study comes from [this dataset](https://www.kaggle.com/datasets/saneryee/starbucks-stores-in-china-mainland) on Kaggle. There are 11 columns in the dataset, including the physical address of Starbucks stores, whether the stores have artwork, the opening and closing times, and most importantly, the latitude and longitude of the stores. Using the latitude and longitude we can make a map of all the Starbucks stores in Mainland China:
+
+```{r, results=TRUE}
+starbucks |>
+  leaflet() |>
+  addProviderTiles("CartoDB.Positron") |>
+  addCircles(
+    lng = ~longitude,
+    lat = ~latitude,
+    color = "darkgreen",
+    fillColor = "darkgreen"
+  )
+```
+
+The following dataframe shows the number of Starbucks stores by cities:
+
+```{r, results=TRUE}
+starbucks |>
+  group_by(city) |>
+  summarize(n = n()) |>
+  arrange(desc(n))
+```
+
+The 5 cities with the most Starbucks stores are Shanghai, Beijing, Hangzhou, Suzhou, and Guangzhou, in this order. This confirms that Shanghai is worth looking deep into.
+
+### Shape Files for Mainland China
+
+```{r}
+provinces <- st_read("maps/2019年省级.shp")
+provinces
+
+cities <- st_read("maps/2019年地级.shp")
+cities
+
+districts <- st_read("maps/2019年县级.shp")
+districts
+```
+
+On [this GitHub repository](https://github.com/ruiduobao/shengshixian.com), I found the shape files for China on the province scale, the city scale, and the district scale. These files are important for spatially merging the Starbucks locations with areal blocks of different scales for analysis. The following map shows Shanghai by districts:
+
+```{r, results=TRUE}
+districts |>
+  filter(省级 == "上海市") |>
+  leaflet() |>
+  addProviderTiles("CartoDB.Positron") |>
+  addPolygons(
+    color = "darkgray",
+    opacity = 1,
+    weight = 1.5,
+    label = ~paste(地名, ENG_NAME)
+  )
+```
+
+The maps of China on the province and city scales are omitted because they are too big in file size and do not render properly.
+
+### China's Population by Provinces
+
+```{r}
+population <- read_csv("population.csv")
+population
+```
+
+[This dataset](https://www.stats.gov.cn/english/PressRelease/202105/t20210510_1817188.html), which I obtained from the National Bureau of Statistics of China, consists of China's population by provinces, coming from the 2020 population census. The dataframe below shows the population by provinces in decreasing order:
+
+```{r, results=TRUE}
+population |>
+  arrange(desc(Population))
+```
+
+The output shows that the 5 provinces with the largest population are Guangdong, Shandong, Henan, Jiangsu, and Sichuan, in this order. Adding up the population in all provinces, we obtain the total population of `r sum(population$Population)`, or `r round(sum(population$Population) / 1e9, 3)` billion in 2020.
+
+### China's GDP by Provinces
+
+```{r}
+gdp <- read_csv("gdp.csv")
+gdp2019 <- gdp |>
+  filter(Year == 2019) |>
+  select(-Year) |>
+  t() |>
+  as_tibble() |>
+  mutate(Province = colnames(gdp[, -1])) |>
+  rename(GDP = V1) |>
+  select(Province, GDP)
+gdp2019
+```
+
+Regarding China's GDP, I found [this dataset](https://www.kaggle.com/datasets/concyclics/chinas-gdp-in-province?select=Chinas+GDP+in+Province+En.csv) on Kaggle consisting of the yearly GDP by provinces from 1992 to 2020. Below is the histogram of the yearly GDP by provinces in 2019, in correspondance to the year of the Starbucks dataset:
+
+```{r, results=TRUE}
+gdp2019 |>
+  ggplot(aes(x = GDP)) +
+  geom_histogram(bins = 10) +
+  theme_classic() +
+  ggtitle("2019 Yearly GDP in China by Provinces") +
+  xlab("GDP") +
+  ylab("Frequency")
+```
+
+The histogram shows that the distribution of province GDP in 2019 is right-skewed, with the mode at around 20000. This means that the majority of the provinces had low GDP; only a few provinces had high GDP. Below are the summary statistics for the GDP in 2019:
+
+```{r, results=TRUE}
+gdp2019 |>
+  select(GDP) |>
+  summary()
+
+gdp2019 |>
+  arrange(desc(GDP)) |>
+  select(Province, GDP)
+```
+
+### Shanghai's Population by Districts
+
+```{r}
+shanghai <- read_csv("shanghai_2019.csv")
+shanghai
+```
+
+Lastly, I obtained [this dataset](https://tjj.sh.gov.cn/tjnj/nj20.htm?d1=2020tjnj/C0202.htm) from the Shanghai Bureau of Statistics, which has 5 columns consisting of the name of the district, the land area, the population by the end of 2019 in the unit of 10000 persons, the number of floating people, and the density of population in the unit of person/km2. The dataframe below shows the area by districts in decreasing order:
+
+```{r, results=TRUE}
+shanghai |>
+  arrange(desc(`行政区划面积（平方公里）`))
+```
+
+From the output, we observe that Pudong New Area and Chongming are the two districts with area over 1000 km2, while Changning, Jing'an, Hongkou, and Huangpu districts are smaller than 50 km2. This might be a source of interesting problems when analyzing the spatial patterns.
+
+Regarding population, the dataframe below shows the population in Shanghai by districts in decreasing order:
+
+```{r, results=TRUE}
+shanghai |>
+  arrange(desc(`年末常住人口（万人）`))
+```
+
+Note that Chongming is the second largest district in Shanghai but its population is the second-to-last among all districts. This shows that area and population are not totally positively correlated, as one might suspect. On the other hand, Pudong New Area is the largest district and it also has the largest population.
+
+# Proposed Methods
+
+To carry out the analysis delineated above, some preprocessing of the data is necessary, with translating all Chinese into English as the first step. Then, since the data comes in multiple files, we would need to merge datasets together, for which there are two strategies. First, for the GDP and population datasets that don't contain a column of the geometry of provinces, we would need to conduct a normal join between datasets by the name of provinces. Hence I need to ensure that the same province is named the same way across datasets. Second, for the Starbucks and the China's shape files that contain the spatial geometry, I would use a spatial join between datasets and possibly aggregate Starbucks stores to a city or province level.
+
+Regarding the data analysis step, I envision that there will be two types of spatial data involved in my study.
+
+### 1. Areal Data
+
+To answer the first research question, I am curious of how Starbucks stores are arranged across neighboring cities or provinces. In other words, do neighboring provinces of a province that has many Starbucks stores tend to have many Starbucks stores as well?
+
+To address this point, we can first use Moran's \(I\) and Geary's \(c\) as an introductory analysis of the spatial autocorrelation in the number of Starbucks stores between neighboring cities or provinces on the global scale. On the local scale, Local Moran's \(I\) and Getis-Ord \(G\) can be useful in assessing each province separately. From these analyses, we can also find the best lag and weight matrix that represent the locations of Starbucks stores well and use it for the subsequent model fitting process.
+
+After obtaining the weight matrix for this situation, we can construct SAR and CAR models to capture the spatial autocorrelation in the number of Starbucks stores in Mainland China. GDP, as a socioeconomic factor, and population, as a demographic factor, can be incorporated into the autoregressive models as covariates to enhance model performance.
+
+The same process can be apply to Shanghai on a district level as well, where we try to detect any autocorrelation in the number of Starbucks stores in Shanghai across different districts.
+
+### 2. Point Pattern Data
+
+The Starbucks stores dataset contains natural point pattern data, in which each data point in the dataset is the presence of a single Starbucks store. Therefore, we can use techniques for point pattern data to find interesting patterns in the distribution of Starbucks stores, particularly in Shanghai because an analysis on the national scale might be too computationally intensive.
+
+We haven't covered many techniques in point pattern data in class yet, so I cannot give a detailed description of the steps I will be taking in this part. However, I anticipate that much of the work in this part will be to create clusters for Starbucks stores using machine learning models. For example, in Shanghai, I can use clustering algorithms such as \(K\)-means and DBSCAN to group Starbucks stores into spatial clusters. Depending on the output, I can generate meaningful interpretations of the distribution of Starbucks stores in Shanghai, such as the most dense area of Starbucks stores. This analysis will hopefully provide insights into how Starbucks chooses store locations in Shanghai.
+
+# References
+
+- [Starbucks Stores in China Mainland -- Kaggle](https://www.kaggle.com/datasets/saneryee/starbucks-stores-in-china-mainland)
+- [CTA Map -- GitHub](https://github.com/ruiduobao/shengshixian.com)
+- [Communiqué of the Seventh National Population Census (No. 3) -- National Bureau of Statistics of China](https://www.stats.gov.cn/english/PressRelease/202105/t20210510_1817188.html)
+- [China's GDP in Province -- Kaggle](https://www.kaggle.com/datasets/concyclics/chinas-gdp-in-province?select=Chinas+GDP+in+Province+En.csv)
+- [Shanghai Statistical Yearbook -- Shanghai Bureau of Statistics](https://tjj.sh.gov.cn/tjnj/20210303/2abf188275224739bd5bce9bf128aca8.html)
