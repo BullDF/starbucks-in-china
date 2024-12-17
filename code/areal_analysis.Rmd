@@ -318,3 +318,93 @@ plot(
   main = "Moran's I Correlogram for KNN2 Lags"
 )
 ```
+
+### Local Moran's I
+
+```{r}
+moran_local <- localmoran(starbucks_count$count, knn2_weights_w)
+moran_local
+```
+
+```{r}
+clusters <- starbucks_count |>
+  mutate(
+    Ii = moran_local[, 1],
+    Z_Ii = moran_local[, 4],
+    p_value = moran_local[, 5],
+  ) |>
+  mutate(cluster = case_when(
+    Z_Ii > 0 & count > mean(count) & p_value < 0.05 ~ "High-High",
+    Z_Ii > 0 & count < mean(count) & p_value < 0.05 ~ "Low-Low",
+    Z_Ii < 0 & count > mean(count) & p_value < 0.05 ~ "High-Low",
+    Z_Ii < 0 & count < mean(count) & p_value < 0.05 ~ "Low-High",
+    TRUE ~ "Not Significant"
+  ))
+```
+
+```{r, eval=FALSE}
+local_moran_pal <- colorFactor(
+  c("red", "blue", "darkgreen", "yellow", "gray"),
+  levels = c("High-High", "Low-Low", "High-Low", "Low-High", "Not Significant"),
+  ordered = TRUE
+)
+
+leaflet() |>
+  addProviderTiles("CartoDB.Positron") |>
+  addPolygons(
+    data = clusters,
+    fillColor = ~local_moran_pal(cluster),
+    fillOpacity = 0.25,
+    color = "#4B4B4B",
+    opacity = 1,
+    weight = 1.5,
+    label = ~paste0(Province, ": ", cluster)
+  ) |>
+  addLegend(
+    "bottomright",
+    pal = local_moran_pal,
+    values = clusters$cluster,
+    title = "Local Moran's I Cluster",
+    opacity = 0.25
+  )
+```
+
+### Local Getis-Ord G*
+
+```{r}
+g_star <- localG(starbucks_count$count, knn2_weights_w)
+z_scores <- as.numeric(g_star)
+
+g_star_clusters <- starbucks_count |>
+  mutate(cluster = case_when(
+    z_scores > 1.645 ~ "High",
+    z_scores < -1.645 ~ "Low",
+    TRUE ~ "Not Significant"
+  ))
+```
+
+```{r, eval=FALSE}
+g_star_pal <- colorFactor(
+  c("blue", "red", "gray"),
+  levels = c("Low", "High", "Not Significant")
+)
+
+leaflet() |>
+  addProviderTiles("CartoDB.Positron") |>
+  addPolygons(
+    data = g_star_clusters,
+    fillColor = g_star_pal(g_star_clusters$cluster),
+    fillOpacity = 0.25,
+    color = "#4B4B4B",
+    opacity = 1,
+    weight = 1.5,
+    label = ~paste0(Province, ": ", cluster)
+  ) |>
+  addLegend(
+    "bottomright",
+    pal = g_star_pal,
+    values = g_star_clusters$cluster,
+    title = "Local Getis-Ord G*",
+    opacity = 0.25
+  )
+```
