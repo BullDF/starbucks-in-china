@@ -1003,10 +1003,10 @@ moran_local</code></pre>
     p_value = moran_local[, 5],
   ) |&gt;
   mutate(cluster = case_when(
-    Z_Ii &gt; 0 &amp; count &gt; mean(count) &amp; p_value &lt; 0.05 ~ &quot;High-High&quot;,
-    Z_Ii &gt; 0 &amp; count &lt; mean(count) &amp; p_value &lt; 0.05 ~ &quot;Low-Low&quot;,
-    Z_Ii &lt; 0 &amp; count &gt; mean(count) &amp; p_value &lt; 0.05 ~ &quot;High-Low&quot;,
-    Z_Ii &lt; 0 &amp; count &lt; mean(count) &amp; p_value &lt; 0.05 ~ &quot;Low-High&quot;,
+    Z_Ii &gt; 0 &amp; count &gt; mean(count) &amp; p_value &lt; 0.1 ~ &quot;High-High&quot;,
+    Z_Ii &gt; 0 &amp; count &lt; mean(count) &amp; p_value &lt; 0.1 ~ &quot;Low-Low&quot;,
+    Z_Ii &lt; 0 &amp; count &gt; mean(count) &amp; p_value &lt; 0.1 ~ &quot;High-Low&quot;,
+    Z_Ii &lt; 0 &amp; count &lt; mean(count) &amp; p_value &lt; 0.1 ~ &quot;Low-High&quot;,
     TRUE ~ &quot;Not Significant&quot;
   ))</code></pre>
 <pre class="r"><code>local_moran_pal &lt;- colorFactor(
@@ -1067,6 +1067,156 @@ leaflet() |&gt;
     values = g_star_clusters$cluster,
     title = &quot;Local Getis-Ord G*&quot;,
     opacity = 0.25
+  )</code></pre>
+</div>
+</div>
+<div id="areal-models" class="section level2 tabset">
+<h2 class="tabset">Areal Models</h2>
+<div id="preparation-1" class="section level3">
+<h3>Preparation</h3>
+<pre class="r"><code>starbucks_count</code></pre>
+<pre><code>## Simple feature collection with 28 features and 2 fields
+## Geometry type: MULTIPOLYGON
+## Dimension:     XY
+## Bounding box:  xmin: 89.40099 ymin: 20.22327 xmax: 135.0885 ymax: 53.5609
+## Geodetic CRS:  WGS 84
+## # A tibble: 28 × 3
+##    Province     count                                                   geometry
+##    &lt;chr&gt;        &lt;int&gt;                                         &lt;MULTIPOLYGON [°]&gt;
+##  1 Anhui           44 (((116.4249 34.65234, 116.4323 34.64257, 116.4324 34.6420…
+##  2 Beijing        340 (((117.3834 40.22647, 117.3856 40.22405, 117.387 40.22017…
+##  3 Chongqing       85 (((109.5796 31.72849, 109.5864 31.72573, 109.5938 31.7210…
+##  4 Fujian         120 (((118.7176 28.31704, 118.7215 28.31289, 118.7238 28.3097…
+##  5 Gansu            8 (((97.19051 42.76287, 97.23601 42.67222, 97.23669 42.6708…
+##  6 Guangdong      576 (((110.5902 20.37852, 110.5923 20.37194, 110.5919 20.3691…
+##  7 Guangxi         43 (((111.0063 26.33989, 111.0065 26.33985, 111.0068 26.3398…
+##  8 Guizhou         21 (((107.5702 29.20471, 107.5705 29.19566, 107.5714 29.1892…
+##  9 Hebei           48 (((117.7998 42.6137, 117.8 42.61273, 117.7997 42.6112, 11…
+## 10 Heilongjiang    27 (((123.4025 53.53506, 123.4047 53.53504, 123.4089 53.5350…
+## # ℹ 18 more rows</code></pre>
+<pre class="r"><code>gdp &lt;- read_csv(paste0(data_dir, &quot;gdp_2019.csv&quot;)) |&gt;
+  filter(!(Province %in% c(&quot;Tibet&quot;, &quot;Xinjiang&quot;))) |&gt;
+  mutate(GDP = GDP / 1000)</code></pre>
+<pre><code>## Rows: 30 Columns: 2
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (1): Province
+## dbl (1): GDP
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>gdp</code></pre>
+<pre><code>## # A tibble: 28 × 2
+##    Province         GDP
+##    &lt;chr&gt;          &lt;dbl&gt;
+##  1 Beijing         35.4
+##  2 Tianjin         14.1
+##  3 Hebei           35.0
+##  4 Shanxi          17.0
+##  5 Inner Mongolia  17.2
+##  6 Liaoning        24.9
+##  7 Jilin           11.7
+##  8 Heilongjiang    13.5
+##  9 Shanghai        38.0
+## 10 Jiangsu         98.7
+## # ℹ 18 more rows</code></pre>
+<pre class="r"><code>population &lt;- read_csv(paste0(data_dir, &quot;population.csv&quot;)) |&gt;
+  filter(!(Province %in% c(&quot;Tibet&quot;, &quot;Xinjiang&quot;))) |&gt;
+  mutate(Population = Population / 1000000)</code></pre>
+<pre><code>## Rows: 30 Columns: 2
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (1): Province
+## dbl (1): Population
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>population</code></pre>
+<pre><code>## # A tibble: 28 × 2
+##    Province       Population
+##    &lt;chr&gt;               &lt;dbl&gt;
+##  1 Beijing              21.9
+##  2 Tianjin              13.9
+##  3 Hebei                74.6
+##  4 Shanxi               34.9
+##  5 Inner Mongolia       24.0
+##  6 Liaoning             42.6
+##  7 Jilin                24.1
+##  8 Heilongjiang         31.9
+##  9 Shanghai             24.9
+## 10 Jiangsu              84.7
+## # ℹ 18 more rows</code></pre>
+<pre class="r"><code>df &lt;- starbucks_count |&gt;
+  inner_join(gdp, by = &quot;Province&quot;) |&gt;
+  inner_join(population, by = &quot;Province&quot;)
+df</code></pre>
+<pre><code>## Simple feature collection with 28 features and 4 fields
+## Geometry type: MULTIPOLYGON
+## Dimension:     XY
+## Bounding box:  xmin: 89.40099 ymin: 20.22327 xmax: 135.0885 ymax: 53.5609
+## Geodetic CRS:  WGS 84
+## # A tibble: 28 × 5
+##    Province     count                                 geometry    GDP Population
+##    &lt;chr&gt;        &lt;int&gt;                       &lt;MULTIPOLYGON [°]&gt;  &lt;dbl&gt;      &lt;dbl&gt;
+##  1 Anhui           44 (((116.4249 34.65234, 116.4323 34.64257…  36.8        61.0
+##  2 Beijing        340 (((117.3834 40.22647, 117.3856 40.22405…  35.4        21.9
+##  3 Chongqing       85 (((109.5796 31.72849, 109.5864 31.72573…  23.6        32.1
+##  4 Fujian         120 (((118.7176 28.31704, 118.7215 28.31289…  42.3        41.5
+##  5 Gansu            8 (((97.19051 42.76287, 97.23601 42.67222…   8.72       25.0
+##  6 Guangdong      576 (((110.5902 20.37852, 110.5923 20.37194… 108.        126. 
+##  7 Guangxi         43 (((111.0063 26.33989, 111.0065 26.33985…  21.2        50.1
+##  8 Guizhou         21 (((107.5702 29.20471, 107.5705 29.19566…  16.8        38.6
+##  9 Hebei           48 (((117.7998 42.6137, 117.8 42.61273, 11…  35.0        74.6
+## 10 Heilongjiang    27 (((123.4025 53.53506, 123.4047 53.53504…  13.5        31.9
+## # ℹ 18 more rows</code></pre>
+</div>
+<div id="maps" class="section level3">
+<h3>Maps</h3>
+<pre class="r"><code>gdp_pal &lt;- colorNumeric(
+  palette = c(&quot;pink&quot;, &quot;red&quot;),
+  domain = df$GDP
+)
+
+leaflet() |&gt;
+  addProviderTiles(&quot;CartoDB.Positron&quot;) |&gt;
+  addPolygons(
+    data = df,
+    weight = 1.5,
+    color = &quot;#4B4B4B&quot;,
+    opacity = 1,
+    fillOpacity = 0.7,
+    fillColor = ~gdp_pal(GDP),
+    label = ~paste0(Province, &quot;: &quot;, GDP)
+  ) |&gt;
+  addLegend(
+    pal = gdp_pal,
+    values = df$GDP,
+    title = &quot;GDP&quot;,
+    position = &quot;bottomright&quot;,
+    opacity = 0.7
+  )</code></pre>
+<pre class="r"><code>population_pal &lt;- colorNumeric(
+  palette = c(&quot;lightblue&quot;, &quot;blue&quot;),
+  domain = df$Population
+)
+
+leaflet() |&gt;
+  addProviderTiles(&quot;CartoDB.Positron&quot;) |&gt;
+  addPolygons(
+    data = df,
+    weight = 1.5,
+    color = &quot;#4B4B4B&quot;,
+    opacity = 1,
+    fillOpacity = 0.7,
+    fillColor = ~population_pal(Population),
+    label = ~paste0(Province, &quot;: &quot;, Population)
+  ) |&gt;
+  addLegend(
+    pal = population_pal,
+    values = df$Population,
+    title = &quot;Population&quot;,
+    position = &quot;bottomright&quot;,
+    opacity = 0.7
   )</code></pre>
 </div>
 </div>

@@ -334,10 +334,10 @@ clusters <- starbucks_count |>
     p_value = moran_local[, 5],
   ) |>
   mutate(cluster = case_when(
-    Z_Ii > 0 & count > mean(count) & p_value < 0.05 ~ "High-High",
-    Z_Ii > 0 & count < mean(count) & p_value < 0.05 ~ "Low-Low",
-    Z_Ii < 0 & count > mean(count) & p_value < 0.05 ~ "High-Low",
-    Z_Ii < 0 & count < mean(count) & p_value < 0.05 ~ "Low-High",
+    Z_Ii > 0 & count > mean(count) & p_value < 0.1 ~ "High-High",
+    Z_Ii > 0 & count < mean(count) & p_value < 0.1 ~ "Low-Low",
+    Z_Ii < 0 & count > mean(count) & p_value < 0.1 ~ "High-Low",
+    Z_Ii < 0 & count < mean(count) & p_value < 0.1 ~ "Low-High",
     TRUE ~ "Not Significant"
   ))
 ```
@@ -406,5 +406,82 @@ leaflet() |>
     values = g_star_clusters$cluster,
     title = "Local Getis-Ord G*",
     opacity = 0.25
+  )
+```
+
+## Areal Models {.tabset}
+
+### Preparation
+
+```{r}
+starbucks_count
+
+gdp <- read_csv(paste0(data_dir, "gdp_2019.csv")) |>
+  filter(!(Province %in% c("Tibet", "Xinjiang"))) |>
+  mutate(GDP = GDP / 1000)
+gdp
+
+population <- read_csv(paste0(data_dir, "population.csv")) |>
+  filter(!(Province %in% c("Tibet", "Xinjiang"))) |>
+  mutate(Population = Population / 1000000)
+population
+
+df <- starbucks_count |>
+  inner_join(gdp, by = "Province") |>
+  inner_join(population, by = "Province")
+df
+```
+
+### Maps
+
+```{r, eval=FALSE}
+gdp_pal <- colorNumeric(
+  palette = c("pink", "red"),
+  domain = df$GDP
+)
+
+leaflet() |>
+  addProviderTiles("CartoDB.Positron") |>
+  addPolygons(
+    data = df,
+    weight = 1.5,
+    color = "#4B4B4B",
+    opacity = 1,
+    fillOpacity = 0.7,
+    fillColor = ~gdp_pal(GDP),
+    label = ~paste0(Province, ": ", GDP)
+  ) |>
+  addLegend(
+    pal = gdp_pal,
+    values = df$GDP,
+    title = "GDP",
+    position = "bottomright",
+    opacity = 0.7
+  )
+```
+
+```{r, eval=FALSE}
+population_pal <- colorNumeric(
+  palette = c("lightblue", "blue"),
+  domain = df$Population
+)
+
+leaflet() |>
+  addProviderTiles("CartoDB.Positron") |>
+  addPolygons(
+    data = df,
+    weight = 1.5,
+    color = "#4B4B4B",
+    opacity = 1,
+    fillOpacity = 0.7,
+    fillColor = ~population_pal(Population),
+    label = ~paste0(Province, ": ", Population)
+  ) |>
+  addLegend(
+    pal = population_pal,
+    values = df$Population,
+    title = "Population",
+    position = "bottomright",
+    opacity = 0.7
   )
 ```
