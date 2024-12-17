@@ -3,7 +3,6 @@
 library(tidyverse)
 library(leaflet)
 library(sf)
-setwd("/Users/bulldf/University of Toronto/2024 Fall/STA465/project")
 ```
 
 ```{r}

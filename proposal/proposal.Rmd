@@ -13,7 +13,6 @@ knitr::opts_chunk$set(
   message = FALSE,
   results = FALSE
 )
-setwd("/Users/bulldf/University of Toronto/2024 Fall/STA465/project")
 ```
 
 ```{r}
