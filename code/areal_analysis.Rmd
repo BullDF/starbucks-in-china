@@ -1,11 +1,22 @@
 
+# {.tabset}
+
+## Setup
+
+```{r}
+knitr::opts_chunk$set(cache = TRUE)
+```
+
 ```{r}
 library(tidyverse)
 library(leaflet)
 library(sf)
+library(spdep)
 data_dir <- "../clean_data/"
 maps_dir <- "../maps/"
 ```
+
+## EDA & Data Wrangling
 
 ```{r}
 starbucks <- read_csv(paste0(data_dir, "starbucks.csv")) |>
@@ -24,7 +35,7 @@ provinces <- st_read(paste0(maps_dir, "2019年省级.shp")) |>
 provinces
 ```
 
-```{r}
+```{r, eval=FALSE}
 leaflet() |>
   addProviderTiles("CartoDB.Positron") |>
   addCircles(
@@ -35,7 +46,7 @@ leaflet() |>
   addPolygons(
     data = provinces,
     weight = 1.5,
-    color = "darkgray",
+    color = "#4B4B4B",
     opacity = 1,
     label = provinces$Province
   )
@@ -47,7 +58,7 @@ starbucks_provinces
 ```
 
 ```{r}
-starbucks_prov_count <- starbucks_provinces |>
+starbucks_count <- starbucks_provinces |>
   st_drop_geometry() |>
   group_by(Province) |>
   summarize(count = n()) |>
@@ -55,27 +66,255 @@ starbucks_prov_count <- starbucks_provinces |>
   st_as_sf()
 ```
 
-```{r}
+```{r, eval=FALSE}
 starbucks_count_pal <- colorNumeric(
   palette = "viridis",
-  domain = starbucks_prov_count$count
+  domain = starbucks_count$count
 )
 
 leaflet() |>
   addProviderTiles("CartoDB.Positron") |>
   addPolygons(
-    data = starbucks_prov_count,
+    data = starbucks_count,
     weight = 1.5,
-    color = "darkgray",
+    color = "#4B4B4B",
     opacity = 1,
     fillOpacity = 0.7,
     fillColor = ~starbucks_count_pal(count),
-    label = paste(starbucks_prov_count$Province, starbucks_prov_count$count)
+    label = paste(starbucks_count$Province, starbucks_count$count)
   ) |>
   addLegend(
     pal = starbucks_count_pal,
-    values = starbucks_prov_count$count,
+    values = starbucks_count$count,
     title = "Starbucks Count",
     position = "bottomright"
   )
+```
+
+## Areal Analysis {.tabset}
+
+### Preparation
+
+```{r}
+centroids <- st_coordinates(st_centroid(st_geometry(starbucks_count)))
+
+queen <- poly2nb(starbucks_count)
+plot(
+  st_geometry(starbucks_count),
+  border = "#4B4B4B",
+  main = "Queen"
+)
+plot(
+  queen,
+  centroids,
+  add = TRUE,
+  col = "blue",
+  lwd = 2
+)
+```
+
+```{r}
+knn4 <- knn2nb(knearneigh(centroids, k = 4))
+plot(
+  st_geometry(starbucks_count),
+  border = "#4B4B4B",
+  main = "KNN"
+)
+plot(
+  knn4,
+  centroids,
+  add = TRUE,
+  col = "darkgreen",
+  lwd = 2
+)
+```
+
+```{r}
+knn2 <- knn2nb(knearneigh(centroids, k = 2))
+plot(
+  st_geometry(starbucks_count),
+  border = "#4B4B4B",
+  main = "KNN"
+)
+plot(
+  knn2,
+  centroids,
+  add = TRUE,
+  col = "darkgreen",
+  lwd = 2
+)
+```
+
+```{r}
+queen_knn_diff <- diffnb(queen, knn4)
+plot(
+  st_geometry(starbucks_count),
+  border = "#4B4B4B",
+  main = "Queen KNN Diff"
+)
+plot(
+  queen_knn_diff,
+  centroids,
+  add = TRUE,
+  col = "red",
+  lwd = 2
+)
+```
+
+```{r}
+queen_weights_b <- nb2listw(queen, style = "B")
+queen_weights_b
+
+queen_weights_w <- nb2listw(queen, style = "W")
+queen_weights_w
+
+knn4_weights_b <- nb2listw(knn4, style = "B")
+knn4_weights_b
+
+knn4_weights_w <- nb2listw(knn4, style = "W")
+knn4_weights_w
+
+knn2_weights_b <- nb2listw(knn2, style = "B")
+knn2_weights_b
+
+knn2_weights_w <- nb2listw(knn2, style = "W")
+knn2_weights_w
+```
+
+### Moran's I Normality
+
+```{r}
+moran.test(
+  starbucks_count$count,
+  queen_weights_b,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+
+moran.test(
+  starbucks_count$count,
+  queen_weights_w,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+
+moran.test(
+  starbucks_count$count,
+  knn4_weights_b,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+
+moran.test(
+  starbucks_count$count,
+  knn4_weights_w,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+
+moran.test(
+  starbucks_count$count,
+  knn2_weights_b,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+
+moran.test(
+  starbucks_count$count,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+```
+
+### Moran's I MCMC
+
+```{r}
+moran.mc(
+  starbucks_count$count,
+  queen_weights_b,
+  nsim = 999,
+  alternative = "two.sided"
+)
+
+moran.mc(
+  starbucks_count$count,
+  queen_weights_w,
+  nsim = 999,
+  alternative = "two.sided"
+)
+
+moran.mc(
+  starbucks_count$count,
+  knn4_weights_b,
+  nsim = 999,
+  alternative = "two.sided"
+)
+
+moran.mc(
+  starbucks_count$count,
+  knn4_weights_w,
+  nsim = 999,
+  alternative = "two.sided"
+)
+
+moran.mc(
+  starbucks_count$count,
+  knn2_weights_b,
+  nsim = 999,
+  alternative = "two.sided"
+)
+
+moran.mc(
+  starbucks_count$count,
+  knn2_weights_w,
+  nsim = 999,
+  alternative = "two.sided"
+)
+```
+
+### Correlogram
+
+```{r}
+corr_queen <- sp.correlogram(
+  queen,
+  starbucks_count$count,
+  order = 5,
+  method = "I",
+  style = "W",
+  randomisation = FALSE,
+  zero.policy = TRUE
+)
+plot(
+  corr_queen,
+  main = "Moran's I Correlogram for Queen Lags"
+)
+
+corr_knn4 <- sp.correlogram(
+  knn4,
+  starbucks_count$count,
+  order = 7,
+  method = "I",
+  style = "W",
+  randomisation = FALSE,
+  zero.policy = TRUE
+)
+plot(
+  corr_knn4,
+  main = "Moran's I Correlogram for KNN4 Lags"
+)
+
+corr_knn2 <- sp.correlogram(
+  knn2,
+  starbucks_count$count,
+  order = 10,
+  method = "I",
+  style = "W",
+  randomisation = FALSE,
+  zero.policy = TRUE
+)
+plot(
+  corr_knn2,
+  main = "Moran's I Correlogram for KNN2 Lags"
+)
 ```
