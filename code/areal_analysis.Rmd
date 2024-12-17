@@ -1,0 +1,14 @@
+
+```{r}
+library(tidyverse)
+library(leaflet)
+library(sf)
+data_dir <- "../clean_data/"
+```
+
+```{r}
+starbucks <- read_csv(paste0(data_dir, "starbucks.csv"))
+starbucks
+
+
+```
