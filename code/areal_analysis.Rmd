@@ -13,6 +13,7 @@ library(leaflet)
 library(sf)
 library(spdep)
 library(spatialreg)
+library(units)
 data_dir <- "../clean_data/"
 maps_dir <- "../maps/"
 ```
@@ -600,4 +601,51 @@ moran.test(
   randomisation = FALSE,
   alternative = "two.sided"
 )
+```
+
+## Covariates Analysis
+
+```{r}
+moran.test(
+  df$GDP,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+
+moran.test(
+  df$Population,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+
+moran.test(
+  df$GDP,
+  queen_weights_w,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+
+moran.test(
+  df$Population,
+  queen_weights_w,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+```
+
+## With Area
+
+```{r}
+df_area <- df |> mutate(
+  Area = (st_area(df) |>
+            set_units(km^2)) / 1000
+)
+df_area
+```
+
+```{r}
+linear_model5 <- lm(count ~ GDP + Population + Area, data = df_area)
+summary(linear_model5)
 ```

@@ -361,22 +361,9 @@ display: none;
 library(leaflet)
 library(sf)
 library(spdep)
-library(spatialreg)</code></pre>
-<pre><code>## Warning: package &#39;spatialreg&#39; was built under R version 4.3.3</code></pre>
-<pre><code>## Loading required package: Matrix</code></pre>
-<pre><code>## 
-## Attaching package: &#39;Matrix&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
-## 
-##     expand, pack, unpack</code></pre>
-<pre><code>## 
-## Attaching package: &#39;spatialreg&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:spdep&#39;:
-## 
-##     get.ClusterOption, get.coresOption, get.mcOption,
-##     get.VerboseOption, get.ZeroPolicyOption, set.ClusterOption,
-##     set.coresOption, set.mcOption, set.VerboseOption,
-##     set.ZeroPolicyOption</code></pre>
+library(spatialreg)
+library(units)</code></pre>
+<pre><code>## udunits database from /Library/Frameworks/R.framework/Versions/4.3-arm64/Resources/library/units/share/udunits/udunits2.xml</code></pre>
 <pre class="r"><code>data_dir &lt;- &quot;../clean_data/&quot;
 maps_dir &lt;- &quot;../maps/&quot;</code></pre>
 </div>
@@ -1545,6 +1532,126 @@ moran.test(
 ## Moran I statistic       Expectation          Variance 
 ##       -0.00119588       -0.03703704        0.02829894</code></pre>
 </div>
+</div>
+<div id="covariates-analysis" class="section level2">
+<h2>Covariates Analysis</h2>
+<pre class="r"><code>moran.test(
+  df$GDP,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = &quot;two.sided&quot;
+)</code></pre>
+<pre><code>## 
+##  Moran I test under normality
+## 
+## data:  df$GDP  
+## weights: knn2_weights_w    
+## 
+## Moran I statistic standard deviate = 1.3685, p-value = 0.1711
+## alternative hypothesis: two.sided
+## sample estimates:
+## Moran I statistic       Expectation          Variance 
+##        0.19318438       -0.03703704        0.02829894</code></pre>
+<pre class="r"><code>moran.test(
+  df$Population,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = &quot;two.sided&quot;
+)</code></pre>
+<pre><code>## 
+##  Moran I test under normality
+## 
+## data:  df$Population  
+## weights: knn2_weights_w    
+## 
+## Moran I statistic standard deviate = 0.54709, p-value = 0.5843
+## alternative hypothesis: two.sided
+## sample estimates:
+## Moran I statistic       Expectation          Variance 
+##        0.05499625       -0.03703704        0.02829894</code></pre>
+<pre class="r"><code>moran.test(
+  df$GDP,
+  queen_weights_w,
+  randomisation = FALSE,
+  alternative = &quot;two.sided&quot;
+)</code></pre>
+<pre><code>## 
+##  Moran I test under normality
+## 
+## data:  df$GDP  
+## weights: queen_weights_w    
+## 
+## Moran I statistic standard deviate = 2.4163, p-value = 0.01568
+## alternative hypothesis: two.sided
+## sample estimates:
+## Moran I statistic       Expectation          Variance 
+##        0.25800099       -0.03703704        0.01490955</code></pre>
+<pre class="r"><code>moran.test(
+  df$Population,
+  queen_weights_w,
+  randomisation = FALSE,
+  alternative = &quot;two.sided&quot;
+)</code></pre>
+<pre><code>## 
+##  Moran I test under normality
+## 
+## data:  df$Population  
+## weights: queen_weights_w    
+## 
+## Moran I statistic standard deviate = 1.6613, p-value = 0.09665
+## alternative hypothesis: two.sided
+## sample estimates:
+## Moran I statistic       Expectation          Variance 
+##        0.16581605       -0.03703704        0.01490955</code></pre>
+</div>
+<div id="with-area" class="section level2">
+<h2>With Area</h2>
+<pre class="r"><code>df_area &lt;- df |&gt; mutate(
+  Area = (st_area(df) |&gt;
+            set_units(km^2)) / 1000
+)
+df_area</code></pre>
+<pre><code>## Simple feature collection with 28 features and 5 fields
+## Geometry type: MULTIPOLYGON
+## Dimension:     XY
+## Bounding box:  xmin: 89.40099 ymin: 20.22327 xmax: 135.0885 ymax: 53.5609
+## Geodetic CRS:  WGS 84
+## # A tibble: 28 × 6
+##    Province     count                           geometry    GDP Population  Area
+##  * &lt;chr&gt;        &lt;int&gt;                 &lt;MULTIPOLYGON [°]&gt;  &lt;dbl&gt;      &lt;dbl&gt; [km^…
+##  1 Anhui           44 (((116.4249 34.65234, 116.4323 34…  36.8        61.0 140. 
+##  2 Beijing        340 (((117.3834 40.22647, 117.3856 40…  35.4        21.9  16.4
+##  3 Chongqing       85 (((109.5796 31.72849, 109.5864 31…  23.6        32.1  82.5
+##  4 Fujian         120 (((118.7176 28.31704, 118.7215 28…  42.3        41.5 123. 
+##  5 Gansu            8 (((97.19051 42.76287, 97.23601 42…   8.72       25.0 425. 
+##  6 Guangdong      576 (((110.5902 20.37852, 110.5923 20… 108.        126.  179. 
+##  7 Guangxi         43 (((111.0063 26.33989, 111.0065 26…  21.2        50.1 237. 
+##  8 Guizhou         21 (((107.5702 29.20471, 107.5705 29…  16.8        38.6 176. 
+##  9 Hebei           48 (((117.7998 42.6137, 117.8 42.612…  35.0        74.6 188. 
+## 10 Heilongjiang    27 (((123.4025 53.53506, 123.4047 53…  13.5        31.9 451. 
+## # ℹ 18 more rows</code></pre>
+<pre class="r"><code>linear_model5 &lt;- lm(count ~ GDP + Population + Area, data = df_area)
+summary(linear_model5)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = count ~ GDP + Population + Area, data = df_area)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -184.73  -51.42  -20.83   30.31  378.64 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) 81.80532   49.96048   1.637    0.115    
+## GDP         12.27562    1.70305   7.208 1.90e-07 ***
+## Population  -6.92218    1.42875  -4.845 6.16e-05 ***
+## Area        -0.07431    0.09645  -0.770    0.449    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 112.9 on 24 degrees of freedom
+## Multiple R-squared:  0.7428, Adjusted R-squared:  0.7106 
+## F-statistic:  23.1 on 3 and 24 DF,  p-value: 2.952e-07</code></pre>
 </div>
 </div>
 
