@@ -357,27 +357,26 @@ display: none;
 <div id="setup" class="section level2">
 <h2>Setup</h2>
 <pre class="r"><code>knitr::opts_chunk$set(cache = TRUE)</code></pre>
-<pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-## ✔ dplyr     1.1.4     ✔ readr     2.1.4
-## ✔ forcats   1.0.0     ✔ stringr   1.5.0
-## ✔ ggplot2   3.5.1     ✔ tibble    3.2.1
-## ✔ lubridate 1.9.2     ✔ tidyr     1.3.1
-## ✔ purrr     1.0.2     
-## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-## ✖ dplyr::filter() masks stats::filter()
-## ✖ dplyr::lag()    masks stats::lag()
-## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
-<pre class="r"><code>library(leaflet)
-library(sf)</code></pre>
-<pre><code>## Linking to GEOS 3.11.0, GDAL 3.5.3, PROJ 9.1.0; sf_use_s2() is TRUE</code></pre>
-<pre class="r"><code>library(spdep)</code></pre>
-<pre><code>## Warning: package &#39;spdep&#39; was built under R version 4.3.3</code></pre>
-<pre><code>## Loading required package: spData</code></pre>
-<pre><code>## Warning: package &#39;spData&#39; was built under R version 4.3.3</code></pre>
-<pre><code>## To access larger datasets in this package, install the spDataLarge
-## package with: `install.packages(&#39;spDataLarge&#39;,
-## repos=&#39;https://nowosad.github.io/drat/&#39;, type=&#39;source&#39;)`</code></pre>
+<pre class="r"><code>library(tidyverse)
+library(leaflet)
+library(sf)
+library(spdep)
+library(spatialreg)</code></pre>
+<pre><code>## Warning: package &#39;spatialreg&#39; was built under R version 4.3.3</code></pre>
+<pre><code>## Loading required package: Matrix</code></pre>
+<pre><code>## 
+## Attaching package: &#39;Matrix&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
+## 
+##     expand, pack, unpack</code></pre>
+<pre><code>## 
+## Attaching package: &#39;spatialreg&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:spdep&#39;:
+## 
+##     get.ClusterOption, get.coresOption, get.mcOption,
+##     get.VerboseOption, get.ZeroPolicyOption, set.ClusterOption,
+##     set.coresOption, set.mcOption, set.VerboseOption,
+##     set.ZeroPolicyOption</code></pre>
 <pre class="r"><code>data_dir &lt;- &quot;../clean_data/&quot;
 maps_dir &lt;- &quot;../maps/&quot;</code></pre>
 </div>
@@ -1218,6 +1217,333 @@ leaflet() |&gt;
     position = &quot;bottomright&quot;,
     opacity = 0.7
   )</code></pre>
+</div>
+<div id="linear-models" class="section level3">
+<h3>Linear Models</h3>
+<pre class="r"><code>linear_model1 &lt;- lm(count ~ GDP + Population, data = df)
+summary(linear_model1)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = count ~ GDP + Population, data = df)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -180.38  -49.90  -14.32   22.08  390.23 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)   60.411     41.193   1.467    0.155    
+## GDP           12.628      1.627   7.760 4.08e-08 ***
+## Population    -7.090      1.401  -5.062 3.17e-05 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 112 on 25 degrees of freedom
+## Multiple R-squared:  0.7364, Adjusted R-squared:  0.7153 
+## F-statistic: 34.92 on 2 and 25 DF,  p-value: 5.775e-08</code></pre>
+<pre class="r"><code>AIC(linear_model1)</code></pre>
+<pre><code>## [1] 348.5077</code></pre>
+<pre class="r"><code>linear_model2 &lt;- lm(count ~ Population, data = df)
+summary(linear_model2)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = count ~ Population, data = df)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -219.81 -103.97  -65.71  -21.02  660.57 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)  
+## (Intercept)   37.880     74.392   0.509   0.6149  
+## Population     2.234      1.303   1.714   0.0984 .
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 202.7 on 26 degrees of freedom
+## Multiple R-squared:  0.1015, Adjusted R-squared:  0.06696 
+## F-statistic: 2.938 on 1 and 26 DF,  p-value: 0.09844</code></pre>
+<pre class="r"><code>AIC(linear_model2)</code></pre>
+<pre><code>## [1] 380.8449</code></pre>
+<pre class="r"><code>linear_model3 &lt;- lm(count ~ GDP, data = df)
+summary(linear_model3)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = count ~ GDP, data = df)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -243.47  -71.40  -19.02   21.21  586.57 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)  -43.833     49.782  -0.880    0.387    
+## GDP            5.561      1.167   4.766 6.24e-05 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 156.2 on 26 degrees of freedom
+## Multiple R-squared:  0.4662, Adjusted R-squared:  0.4457 
+## F-statistic: 22.71 on 1 and 26 DF,  p-value: 6.238e-05</code></pre>
+<pre class="r"><code>AIC(linear_model3)</code></pre>
+<pre><code>## [1] 366.2632</code></pre>
+<pre class="r"><code>linear_model4 &lt;- lm(count ~ GDP * Population, data = df)
+summary(linear_model4)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = count ~ GDP * Population, data = df)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -198.72  -48.27  -15.20   27.92  373.23 
+## 
+## Coefficients:
+##                Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)    22.17936   64.66566   0.343 0.734596    
+## GDP            14.15476    2.57138   5.505 1.16e-05 ***
+## Population     -6.47914    1.61882  -4.002 0.000524 ***
+## GDP:Population -0.01902    0.02466  -0.771 0.448044    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 112.9 on 24 degrees of freedom
+## Multiple R-squared:  0.7428, Adjusted R-squared:  0.7106 
+## F-statistic:  23.1 on 3 and 24 DF,  p-value: 2.95e-07</code></pre>
+<pre class="r"><code>AIC(linear_model4)</code></pre>
+<pre><code>## [1] 349.8221</code></pre>
+<pre class="r"><code>linear_res &lt;- linear_model1$residuals
+moran.test(
+  linear_res,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = &quot;two.sided&quot;
+)</code></pre>
+<pre><code>## 
+##  Moran I test under normality
+## 
+## data:  linear_res  
+## weights: knn2_weights_w    
+## 
+## Moran I statistic standard deviate = 0.27515, p-value = 0.7832
+## alternative hypothesis: two.sided
+## sample estimates:
+## Moran I statistic       Expectation          Variance 
+##       0.009249486      -0.037037037       0.028298938</code></pre>
+</div>
+<div id="sar-error" class="section level3">
+<h3>SAR Error</h3>
+<pre class="r"><code>sar_error &lt;- errorsarlm(
+  count ~ GDP + Population,
+  data = df,
+  listw = knn2_weights_w
+)
+summary(sar_error)</code></pre>
+<pre><code>## 
+## Call:
+## errorsarlm(formula = count ~ GDP + Population, data = df, listw = knn2_weights_w)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -180.572  -51.015  -12.559   20.666  392.660 
+## 
+## Type: error 
+## Coefficients: (asymptotic standard errors) 
+##             Estimate Std. Error z value  Pr(&gt;|z|)
+## (Intercept)  59.7879    39.2816  1.5220     0.128
+## GDP          12.4874     1.5434  8.0907 6.661e-16
+## Population   -6.9831     1.3231 -5.2778 1.307e-07
+## 
+## Lambda: 0.029128, LR test value: 0.0075369, p-value: 0.93082
+## Asymptotic standard error: 0.20119
+##     z-value: 0.14478, p-value: 0.88489
+## Wald statistic: 0.02096, p-value: 0.88489
+## 
+## Log likelihood: -170.2501 for error model
+## ML residual variance (sigma squared): 11187, (sigma: 105.77)
+## Number of observations: 28 
+## Number of parameters estimated: 5 
+## AIC: 350.5, (AIC for lm: 348.51)</code></pre>
+<pre class="r"><code>sar_error_res &lt;- sar_error$residuals
+moran.test(
+  sar_error_res,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = &quot;two.sided&quot;
+)</code></pre>
+<pre><code>## 
+##  Moran I test under normality
+## 
+## data:  sar_error_res  
+## weights: knn2_weights_w    
+## 
+## Moran I statistic standard deviate = 0.25538, p-value = 0.7984
+## alternative hypothesis: two.sided
+## sample estimates:
+## Moran I statistic       Expectation          Variance 
+##       0.005923549      -0.037037037       0.028298938</code></pre>
+</div>
+<div id="sar-lag" class="section level3">
+<h3>SAR Lag</h3>
+<pre class="r"><code>sar_lag &lt;- lagsarlm(
+  count ~ GDP + Population,
+  data = df,
+  listw = knn2_weights_w
+)
+summary(sar_lag)</code></pre>
+<pre><code>## 
+## Call:
+## lagsarlm(formula = count ~ GDP + Population, data = df, listw = knn2_weights_w)
+## 
+## Residuals:
+##       Min        1Q    Median        3Q       Max 
+## -193.9133  -39.7857    6.3293   32.2533  331.1451 
+## 
+## Type: lag 
+## Coefficients: (asymptotic standard errors) 
+##             Estimate Std. Error z value  Pr(&gt;|z|)
+## (Intercept)  36.4830    38.8313  0.9395    0.3475
+## GDP          11.7099     1.5170  7.7193 1.177e-14
+## Population   -6.5749     1.2721 -5.1683 2.362e-07
+## 
+## Rho: 0.18304, LR test value: 2.2276, p-value: 0.13556
+## Asymptotic standard error: 0.11103
+##     z-value: 1.6485, p-value: 0.09924
+## Wald statistic: 2.7177, p-value: 0.09924
+## 
+## Log likelihood: -169.14 for lag model
+## ML residual variance (sigma squared): 10205, (sigma: 101.02)
+## Number of observations: 28 
+## Number of parameters estimated: 5 
+## AIC: 348.28, (AIC for lm: 348.51)
+## LM test for residual autocorrelation
+## test value: 0.012352, p-value: 0.91151</code></pre>
+<pre class="r"><code>sar_lag_res &lt;- sar_lag$residuals
+moran.test(
+  sar_lag_res,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = &quot;two.sided&quot;
+)</code></pre>
+<pre><code>## 
+##  Moran I test under normality
+## 
+## data:  sar_lag_res  
+## weights: knn2_weights_w    
+## 
+## Moran I statistic standard deviate = 0.12459, p-value = 0.9008
+## alternative hypothesis: two.sided
+## sample estimates:
+## Moran I statistic       Expectation          Variance 
+##       -0.01607807       -0.03703704        0.02829894</code></pre>
+</div>
+<div id="sar-lag-error" class="section level3">
+<h3>SAR Lag-Error</h3>
+<pre class="r"><code>sarar &lt;- sacsarlm(
+  count ~ GDP + Population,
+  data = df,
+  listw = knn2_weights_w
+)
+summary(sarar)</code></pre>
+<pre><code>## 
+## Call:
+## sacsarlm(formula = count ~ GDP + Population, data = df, listw = knn2_weights_w)
+## 
+## Residuals:
+##       Min        1Q    Median        3Q       Max 
+## -193.1454  -39.5311    6.1463   32.0058  329.0554 
+## 
+## Type: sac 
+## Coefficients: (asymptotic standard errors) 
+##             Estimate Std. Error z value  Pr(&gt;|z|)
+## (Intercept)  37.5533    39.1268  0.9598    0.3372
+## GDP          11.7715     1.5522  7.5838 3.353e-14
+## Population   -6.6372     1.2808 -5.1822 2.193e-07
+## 
+## Rho: 0.18382
+## Asymptotic standard error: 0.13442
+##     z-value: 1.3675, p-value: 0.17146
+## Lambda: -0.031902
+## Asymptotic standard error: 0.24667
+##     z-value: -0.12933, p-value: 0.8971
+## 
+## LR test value: 2.242, p-value: 0.32595
+## 
+## Log likelihood: -169.1329 for sac model
+## ML residual variance (sigma squared): 10195, (sigma: 100.97)
+## Number of observations: 28 
+## Number of parameters estimated: 6 
+## AIC: 350.27, (AIC for lm: 348.51)</code></pre>
+<pre class="r"><code>sarar_res &lt;- sarar$residuals
+moran.test(
+  sarar_res,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = &quot;two.sided&quot;
+)</code></pre>
+<pre><code>## 
+##  Moran I test under normality
+## 
+## data:  sarar_res  
+## weights: knn2_weights_w    
+## 
+## Moran I statistic standard deviate = 0.1663, p-value = 0.8679
+## alternative hypothesis: two.sided
+## sample estimates:
+## Moran I statistic       Expectation          Variance 
+##      -0.009060868      -0.037037037       0.028298938</code></pre>
+</div>
+<div id="car" class="section level3">
+<h3>CAR</h3>
+<pre class="r"><code>car &lt;- spautolm(
+  count ~ GDP + Population,
+  df,
+  listw = knn2_weights_w,
+  family = &quot;CAR&quot;
+)</code></pre>
+<pre><code>## Warning in spautolm(count ~ GDP + Population, df, listw = knn2_weights_w, :
+## Non-symmetric spatial weights in CAR model</code></pre>
+<pre class="r"><code>summary(car)</code></pre>
+<pre><code>## 
+## Call: 
+## spautolm(formula = count ~ GDP + Population, data = df, listw = knn2_weights_w, 
+##     family = &quot;CAR&quot;)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -181.704  -50.177  -13.623   21.564  390.388 
+## 
+## Coefficients: 
+##             Estimate Std. Error z value  Pr(&gt;|z|)
+## (Intercept)  60.5722    39.0957  1.5493    0.1213
+## GDP          12.5913     1.5406  8.1730 2.220e-16
+## Population   -7.0782     1.3234 -5.3484 8.872e-08
+## 
+## Lambda: 0.027909 LR test value: 0.0036171 p-value: 0.95204 
+## Numerical Hessian standard error of lambda: 0.47375 
+## 
+## Log likelihood: -170.252 
+## ML residual variance (sigma squared): 11191, (sigma: 105.79)
+## Number of observations: 28 
+## Number of parameters estimated: 5 
+## AIC: 350.5</code></pre>
+<pre class="r"><code>car_res &lt;- residuals(car)
+moran.test(
+  car_res,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = &quot;two.sided&quot;
+)</code></pre>
+<pre><code>## 
+##  Moran I test under normality
+## 
+## data:  car_res  
+## weights: knn2_weights_w    
+## 
+## Moran I statistic standard deviate = 0.21306, p-value = 0.8313
+## alternative hypothesis: two.sided
+## sample estimates:
+## Moran I statistic       Expectation          Variance 
+##       -0.00119588       -0.03703704        0.02829894</code></pre>
 </div>
 </div>
 </div>

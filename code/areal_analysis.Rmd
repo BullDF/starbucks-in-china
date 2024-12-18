@@ -12,6 +12,7 @@ library(tidyverse)
 library(leaflet)
 library(sf)
 library(spdep)
+library(spatialreg)
 data_dir <- "../clean_data/"
 maps_dir <- "../maps/"
 ```
@@ -484,4 +485,119 @@ leaflet() |>
     position = "bottomright",
     opacity = 0.7
   )
+```
+
+### Linear Models
+
+```{r}
+linear_model1 <- lm(count ~ GDP + Population, data = df)
+summary(linear_model1)
+AIC(linear_model1)
+
+linear_model2 <- lm(count ~ Population, data = df)
+summary(linear_model2)
+AIC(linear_model2)
+
+linear_model3 <- lm(count ~ GDP, data = df)
+summary(linear_model3)
+AIC(linear_model3)
+
+linear_model4 <- lm(count ~ GDP * Population, data = df)
+summary(linear_model4)
+AIC(linear_model4)
+```
+
+```{r}
+linear_res <- linear_model1$residuals
+moran.test(
+  linear_res,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+```
+
+### SAR Error
+
+```{r}
+sar_error <- errorsarlm(
+  count ~ GDP + Population,
+  data = df,
+  listw = knn2_weights_w
+)
+summary(sar_error)
+```
+
+```{r}
+sar_error_res <- sar_error$residuals
+moran.test(
+  sar_error_res,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+```
+
+### SAR Lag
+
+```{r}
+sar_lag <- lagsarlm(
+  count ~ GDP + Population,
+  data = df,
+  listw = knn2_weights_w
+)
+summary(sar_lag)
+```
+
+```{r}
+sar_lag_res <- sar_lag$residuals
+moran.test(
+  sar_lag_res,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+```
+
+### SAR Lag-Error
+
+```{r}
+sarar <- sacsarlm(
+  count ~ GDP + Population,
+  data = df,
+  listw = knn2_weights_w
+)
+summary(sarar)
+```
+
+```{r}
+sarar_res <- sarar$residuals
+moran.test(
+  sarar_res,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
+```
+
+### CAR
+
+```{r}
+car <- spautolm(
+  count ~ GDP + Population,
+  df,
+  listw = knn2_weights_w,
+  family = "CAR"
+)
+summary(car)
+```
+
+```{r}
+car_res <- residuals(car)
+moran.test(
+  car_res,
+  knn2_weights_w,
+  randomisation = FALSE,
+  alternative = "two.sided"
+)
 ```
