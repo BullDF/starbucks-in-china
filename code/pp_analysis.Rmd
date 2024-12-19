@@ -1,0 +1,166 @@
+
+# {.tabset}
+
+## Setup
+
+```{r}
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(leaflet)
+library(sf)
+library(dbscan)
+library(spatstat)
+library(splancs)
+data_dir <- "../clean_data/"
+maps_dir <- "../maps/"
+```
+
+## EDA & Data Wrangling
+
+```{r}
+starbucks <- read_csv(paste0(data_dir, "starbucks_shanghai.csv")) |>
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |>
+  select(-city)
+starbucks
+
+shanghai <- st_read(paste0(maps_dir, "2019年县级.shp")) |>
+  filter(NAME_1 == "Shanghai") |>
+  select(ENG_NAME) |>
+  rename(District = ENG_NAME) |>
+  mutate(District = case_when(
+    District == "Pudongxin" ~ "Pudong New Area",
+    District == "Jingan" ~ "Jing'an",
+    TRUE ~ District
+  ))
+shanghai
+
+demographics <- read_csv(paste0(data_dir, "shanghai_2019_en.csv"))
+demographics
+```
+
+```{r, eval=FALSE}
+leaflet() |>
+  addProviderTiles("CartoDB.Positron") |>
+  addCircles(
+    data = starbucks,
+    color = "darkgreen"
+  ) |>
+  addPolygons(
+    data = shanghai,
+    color = "#4B4B4B",
+    weight = 1.5,
+    opacity = 1,
+    label = ~District
+  )
+```
+
+```{r}
+starbucks
+wgs_coords <- st_coordinates(starbucks)
+
+utm_coords <- starbucks |> st_transform(crs = 32651) |> st_coordinates()
+
+df <- starbucks |>
+  mutate(
+    lon = wgs_coords[, 1],
+    lat = wgs_coords[, 2],
+    x = utm_coords[, 1],
+    y = utm_coords[, 2]
+  ) |>
+  st_drop_geometry()
+df
+```
+
+```{r}
+window <- convexhull.xy(df$x, df$y)
+window
+
+starbucks_ppp <- ppp(df$x, df$y, window = window)
+starbucks_ppp
+
+starbucks_pts <- as.points(df$x, df$y)
+
+plot(starbucks_ppp)
+```
+
+## Homogeneous PPP
+
+```{r}
+hppp <- rpoispp(lambda = nrow(df) / area(window), win = window)
+hppp
+
+plot(hppp)
+```
+
+## Testing for CSR {.tabset}
+
+### Ripley's K
+
+```{r}
+min_x <- min(df$x)
+max_x <- max(df$x)
+min_y <- min(df$y)
+max_y <- max(df$y)
+poly <- as.points(c(min_x, max_x, max_x, min_x), c(min_y, min_y, max_y, max_y))
+
+starbucks_seq <- seq(0, 80000, 2000)
+
+khat <- khat(starbucks_pts, poly, starbucks_seq)
+khat
+
+ul_khat <- Kenv.csr(length(df$x), poly, nsim = 99, starbucks_seq)
+
+plot(
+  starbucks_seq,
+  khat - pi * starbucks_seq^2,
+  type = "l",
+  xlab = "Distance",
+  ylab = "Estimated K - pi * h^2"
+)
+
+# plot upper bound
+lines(starbucks_seq, ul_khat$upper - pi * starbucks_seq^2, lty = 2)
+
+# plot lower bound
+lines(starbucks_seq, ul_khat$lower - pi * starbucks_seq^2, lty = 2)
+```
+
+```{r}
+l <- function(k, h) {
+  sqrt(k / pi) - h
+}
+
+plot(
+  starbucks_seq,
+  l(khat, starbucks_seq),
+  type = "l",
+  xlab = "Distance",
+  ylab = "Estimated L"
+)
+
+# plot upper bound of Lhat
+lines(starbucks_seq, l(ul_khat$upper, starbucks_seq), lty = 2)
+
+# plot lower bound of Lhat
+lines(starbucks_seq, l(ul_khat$lower, starbucks_seq), lty = 2)
+```
+
+### K-S Test
+
+```{r}
+ks_x <- cdf.test(starbucks_ppp, test = "ks", "x")
+plot(ks_x)
+
+ks_y <- cdf.test(starbucks_ppp, test = "ks", "y")
+plot(ks_y)
+```
+
+### G-function
+
+```{r}
+plot(envelope(starbucks_ppp, Gest))
+```
+
