@@ -58,7 +58,6 @@ leaflet() |>
 ```
 
 ```{r}
-starbucks
 wgs_coords <- st_coordinates(starbucks)
 
 utm_coords <- starbucks |> st_transform(crs = 32651) |> st_coordinates()
@@ -164,3 +163,112 @@ plot(ks_y)
 plot(envelope(starbucks_ppp, Gest))
 ```
 
+### Quadrat Counting
+
+```{r}
+quadrat <- quadratcount(starbucks_ppp, nx = 10, ny = 10)
+
+plot(
+  starbucks_pts,
+  cex = 0.5,
+  main = "Starbucks Quadrat Counts",
+  xlab = "x",
+  ylab = "y"
+)
+plot(quadrat, add = TRUE)
+
+mean(quadrat)
+
+quadrat.test(quadrat, alternative = "two.sided", method = "MonteCarlo")
+
+quadrat.test(quadrat, alternative = "regular", method = "MonteCarlo")
+
+quadrat.test(quadrat, alternative = "clustered", method = "MonteCarlo")
+```
+
+## Kernel Density
+
+```{r}
+optim_bw <- bw.diggle(starbucks_ppp, edge = "border")
+optim_bw
+
+ds1 <- density.ppp(starbucks_ppp, optim_bw)
+plot(ds1, main = "Starbucks Density for Optimal Bandwidth")
+plot(starbucks_ppp, add = TRUE, cols = "white", pch = 16, size = 0.5)
+
+ds2 <- density.ppp(starbucks_ppp, sigma = 3000)
+plot(ds2, main = "Starbucks Density for Bandwidth = 3000")
+plot(starbucks_ppp, add = TRUE, cols = "white", pch = 16, size = 0.5)
+
+plot(density(starbucks_ppp), main = "Starbucks Density")
+```
+
+## Dirichlet Tesselation
+
+```{r}
+plot(dirichlet(starbucks_ppp), main = "Starbucks Dirichlet Tesselation")
+```
+
+## DBSCAN
+
+```{r}
+dbscan1 <- dbscan(starbucks_pts, eps = 500, minPts = 5)
+dbscan1
+hullplot(starbucks_pts, dbscan1$cluster, main = "DBSCAN Clusters")
+
+dbscan2 <- dbscan(starbucks_pts, eps = 2000, minPts = 5)
+dbscan2
+hullplot(starbucks_pts, dbscan2$cluster, main = "DBSCAN Clusters")
+
+dbscan3 <- dbscan(starbucks_pts, eps = 5000, minPts = 5)
+dbscan3
+hullplot(starbucks_pts, dbscan3$cluster, main = "DBSCAN Clusters")
+
+dbscan4 <- hdbscan(starbucks_pts, minPts = 5)
+dbscan4
+hullplot(starbucks_pts, dbscan4$cluster, main = "HDBSCAN Clusters")
+plot(dbscan4, show_flat = TRUE)
+```
+
+## Inhomogeneous Poisson Process
+
+```{r}
+model1 <- ppm(starbucks_ppp ~ 1, Poisson())
+summary(model1)
+AIC(model1)
+
+model2 <- ppm(starbucks_ppp, ~ log(x) + log(y), Poisson())
+summary(model2)
+AIC(model2)
+plot(model2)
+```
+
+```{r}
+simulation1 <- simulate(model1, nsim = 15)
+simulation1[[16]] <- starbucks_ppp
+plot(simulation1, main = "")
+
+simulation2 <- simulate(model2, nsim = 15)
+simulation2[[16]] <- starbucks_ppp
+plot(simulation2, main = "")
+```
+
+## Cluster Process
+
+```{r}
+model3 <- kppm(starbucks_ppp, clusters = "Thomas")
+summary(model3)
+
+model4 <- kppm(starbucks_ppp, clusters = "LGCP")
+summary(model4)
+```
+
+```{r}
+simulation3 <- simulate(model3, nsim = 15)
+simulation3[[16]] <- starbucks_ppp
+plot(simulation3, main = "")
+
+simulation4 <- simulate(model4, nsim = 15)
+simulation4[[16]] <- starbucks_ppp
+plot(simulation4, main = "")
+```
