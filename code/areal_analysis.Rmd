@@ -66,6 +66,7 @@ starbucks_count <- starbucks_provinces |>
   summarize(count = n()) |>
   left_join(provinces, by = "Province") |>
   st_as_sf()
+starbucks_count
 ```
 
 ```{r, eval=FALSE}
