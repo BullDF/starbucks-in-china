@@ -14,6 +14,8 @@ library(sf)
 library(spdep)
 library(spatialreg)
 library(units)
+library(webshot)
+library(htmlwidgets)
 data_dir <- "../clean_data/"
 maps_dir <- "../maps/"
 ```
@@ -121,7 +123,7 @@ knn4 <- knn2nb(knearneigh(centroids, k = 4))
 plot(
   st_geometry(starbucks_count),
   border = "#4B4B4B",
-  main = "KNN"
+  main = "KNN-4"
 )
 plot(
   knn4,
@@ -137,13 +139,13 @@ knn2 <- knn2nb(knearneigh(centroids, k = 2))
 plot(
   st_geometry(starbucks_count),
   border = "#4B4B4B",
-  main = "KNN"
+  main = "KNN-2"
 )
 plot(
   knn2,
   centroids,
   add = TRUE,
-  col = "darkgreen",
+  col = "purple",
   lwd = 2
 )
 ```
@@ -439,7 +441,7 @@ df
 
 ```{r, eval=FALSE}
 gdp_pal <- colorNumeric(
-  palette = c("pink", "red"),
+  palette = c("pink", "darkred"),
   domain = df$GDP
 )
 

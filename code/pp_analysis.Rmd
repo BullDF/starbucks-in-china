@@ -14,6 +14,8 @@ library(sf)
 library(dbscan)
 library(spatstat)
 library(splancs)
+library(htmlwidgets)
+library(webshot)
 data_dir <- "../clean_data/"
 maps_dir <- "../maps/"
 ```
@@ -82,7 +84,7 @@ starbucks_ppp
 
 starbucks_pts <- as.points(df$x, df$y)
 
-plot(starbucks_ppp)
+plot(starbucks_ppp, main = "Point Pattern of Starbucks Stores in Shanghai")
 ```
 
 ## Homogeneous PPP
@@ -117,7 +119,8 @@ plot(
   khat - pi * starbucks_seq^2,
   type = "l",
   xlab = "Distance",
-  ylab = "Estimated K - pi * h^2"
+  ylab = "Estimated K - pi * h^2",
+  main = "Ripley's K"
 )
 
 # plot upper bound
@@ -160,7 +163,7 @@ plot(ks_y)
 ### G-function
 
 ```{r}
-plot(envelope(starbucks_ppp, Gest))
+plot(envelope(starbucks_ppp, Gest), main = "G-Function")
 ```
 
 ### Quadrat Counting
@@ -201,6 +204,7 @@ plot(ds2, main = "Starbucks Density for Bandwidth = 3000")
 plot(starbucks_ppp, add = TRUE, cols = "white", pch = 16, size = 0.5)
 
 plot(density(starbucks_ppp), main = "Starbucks Density")
+plot(starbucks_ppp, add = TRUE, cols = "white", pch = 16, size = 0.5)
 ```
 
 ## Dirichlet Tesselation
@@ -244,12 +248,12 @@ plot(model2)
 ```
 
 ```{r}
-simulation1 <- simulate(model1, nsim = 15)
-simulation1[[16]] <- starbucks_ppp
+simulation1 <- simulate(model1, nsim = 3)
+simulation1[[4]] <- starbucks_ppp
 plot(simulation1, main = "")
 
-simulation2 <- simulate(model2, nsim = 15)
-simulation2[[16]] <- starbucks_ppp
+simulation2 <- simulate(model2, nsim = 3)
+simulation2[[4]] <- starbucks_ppp
 plot(simulation2, main = "")
 ```
 
@@ -264,11 +268,11 @@ summary(model4)
 ```
 
 ```{r}
-simulation3 <- simulate(model3, nsim = 15)
-simulation3[[16]] <- starbucks_ppp
+simulation3 <- simulate(model3, nsim = 3)
+simulation3[[4]] <- starbucks_ppp
 plot(simulation3, main = "")
 
-simulation4 <- simulate(model4, nsim = 15)
-simulation4[[16]] <- starbucks_ppp
+simulation4 <- simulate(model4, nsim = 3)
+simulation4[[4]] <- starbucks_ppp
 plot(simulation4, main = "")
 ```
