@@ -32,7 +32,7 @@
 
 \href{https://github.com/BullDF/starbucks-in-china}{\textbf{Project GitHub Repository}}
 
-\href{https://play.library.utoronto.ca/watch/c4d71902f00f5e6fe91bea00974fce6c}{\textbf{Project Presentation}}
+\href{https://play.library.utoronto.ca/watch/c835c3a8158dea3599a85fc1d7a5a2cc}{\textbf{Project Presentation}}
 
 \section{Introduction}
 
@@ -40,7 +40,7 @@ As globalization continues, the presence of multinational corporations becomes i
 
 To understand the success of Starbucks in China, a great starting point is to analyze the spatial patterns in Starbucks stores in China. Therefore, given a dataset consisting of locations of Starbucks stores in Mainland China, this project aims to use techniques in spatial statistics to discover spatial patterns within the data. Socioeconomic and demographic factors such as GDP and population are included in the spatial models as covariates to improve model performance.
 
-In addition, Shanghai, one of the most developed cities in China, has a remarkably large number of Starbucks stores compared to other cities. Hence, this study also delves into Shanghai and focus on finding spatial patterns in locations of Starbucks stores in Shanghai particularly.
+In addition, Shanghai, one of the most developed cities in China, has a remarkably large number of Starbucks stores compared to other cities. Hence, this study also delves into Shanghai and focuses on finding spatial patterns in locations of Starbucks stores in Shanghai.
 
 Ultimately, this project aims to achieve the following objectives:
 
@@ -78,7 +78,7 @@ Upon conducting a spatial join, I grouped the Starbucks stores by province and c
     \caption{Maps of Starbucks Stores in China}
 \end{figure}
 
-As mentioned in the introduction, GDP and population were incorporated into the analysis. The GDP dataset was pulled from Kaggle, originally containing GDP information by province from 1992 to 2010. Since the Starbucks dataset contains the store locations by the end of 2019, I only kept the GDP information in 2019 and removed the rest. \textit{Table \ref{tab:gdp}} below shows the 5 provinces with the highest GDP and the total GDP. Additionally, the population information was extracted from the National Bureau of Statistics of China regarding the 2020 population census. \textit{Table \ref{tab:population}} below shows the 5 provinces with the greatest population and the total population of China. Note that Guangdong, Jiangsu, and Henan have the greatest populations and meanwhile the highest GDPs.
+As mentioned in the introduction, GDP and population were incorporated into the analysis. The GDP dataset was pulled from Kaggle, originally containing GDP information by province from 1992 to 2020. Since the Starbucks dataset contains the store locations by the end of 2019, I only kept the GDP information in 2019 and removed the rest. \textit{Table \ref{tab:gdp}} below shows the 5 provinces with the highest GDP and the total GDP. Additionally, the population information was extracted from the National Bureau of Statistics of China regarding the 2020 population census. \textit{Table \ref{tab:population}} below shows the 5 provinces with the greatest population and the total population of China. Note that Guangdong, Jiangsu, and Henan had the greatest populations and meanwhile the highest GDPs.
 
 \begin{table}[htbp]
     \centering
@@ -260,7 +260,7 @@ The preliminary analysis of the neighborhood matrices above indicates that there
 
 Noted in \textit{Table \ref{tab:linear_models}}, the model with the highest adjusted \(R^2\) and the lowest AIC value is specified by GDP + Population. The coefficient estimates for this model are summarized in \textit{Table \ref{tab:best_linear}} above. Notice that both GDP and population are statistically significant predictors in the model. The positive GDP coefficient estimate indicates that a province with high GDP tends to also have a large number of Starbucks stores. On the contrary, population has an inverse correlation with the number of Starbucks stores in the province. I suspect that this relationship might be confounded by Shanghai because Shanghai has low population but many Starbucks stores. Overall, this model explains 71.5\% of the variation in the number of Starbucks stores by province in China and thus it is a generally acceptable model.
 
-With this linear model, I examined the spatial autocorrelation in the residuals by conducting a Moran's \(I\) hypothesis test. Interestingly, the test returns a Moran's \(I\) statistic of 0.009 and a \(p\)-value of \textbf{0.783}. This result indicates that there is no autocorrelation in the residuals after accounting for GDP and population, which suggests that GDP and population are capable of explaining the number of Starbucks stores and there is technically no autocorrelation in the number of Starbucks stores in the first place. This conclusion refutes the Moran's \(I\) tests given in \textit{Table \ref{tab:moran_i_tests}}.
+With this linear model, I examined the spatial autocorrelation in the residuals by conducting a Moran's \(I\) hypothesis test. Interestingly, the test returns a Moran's \(I\) statistic of 0.009 and a \(p\)-value of \textbf{0.783}. This result indicates that there is no autocorrelation in the residuals after accounting for GDP and population, which suggests that GDP and population are capable of modeling the number of Starbucks stores and there is technically no autocorrelation in the number of Starbucks stores in the first place. This conclusion refutes the Moran's \(I\) tests given in \textit{Table \ref{tab:moran_i_tests}}.
 
 To conclude this section of linear models, I was curious of whether there is any spatial autocorrelation in GDP or population so that the linear model above actually has spatial information in fitting the number of Starbucks stores. Therefore, I conducted two-sided Moran's \(I\) hypothesis tests on GDP and population using the \(k\)NN-2 and the queen row-standardized weights matrices. The results are summarized in \textit{Table \ref{tab:moran_i_tests_covariates}} below.
 
@@ -383,15 +383,15 @@ To study point patterns, the exploratory step is to test whether the points are 
     \label{fig:csr_tests}
 \end{figure}
 
-\textbf{Ripley's \(K\)} -- Ripley’s \(K\) tests for CSR by considering the expected number of points within a distance \(r\) of a point and normalizing the count by the intensity. Mathematically,
+\textbf{1. Ripley's \(K\)} -- Ripley’s \(K\) tests for CSR by considering the expected number of points within a distance \(r\) of a point and normalizing the count by the intensity. Mathematically,
 \[K(r) = \frac{1}{\lambda} \mathbb{E}[N(r)].\]
 From \textit{Figure \ref{fig:ripley_k}}, we notice that the empirical Ripley's \(K\) computed from the Starbucks data does not fall into the theoretical envelope at all, indicating that there is very unlikely CSR in the locations of Starbucks stores in Shanghai.
 
-\textbf{Spatial K-S Test} -- The K-S test assesses the goodness-of-fit of how well the distribution of the point pattern of Starbucks stores in Shanghai fits into a theoretical distribution of CSR. Methodologically, we can plot the theoretical cumulative distribution function (CDF) and the empirical distribution function (EDF) together, like in \textit{Figure \ref{fig:ks_test}}. Then the K-S test statistic \(D\) is computed as
+\textbf{2. Spatial K-S Test} -- The K-S test assesses the goodness-of-fit of how well the distribution of the point pattern of Starbucks stores in Shanghai fits into a theoretical distribution of CSR. Methodologically, we can plot the theoretical cumulative distribution function (CDF) and the empirical distribution function (EDF) together, like in \textit{Figure \ref{fig:ks_test}}. Then the K-S test statistic \(D\) is computed as
 \[D = \max |F_{\text{obs}}(z) - F_{\text{exp}}(z)|.\]
 Here, the K-S test returned a \(p\)-value of 0, indicating that there is unlikely CSR in the locations of Starbucks stores in Shanghai.
 
-\textbf{\(G\)-Function} -- The \(G\)-function measures the cumulative distribution function for the probability that the nearest neighbor distance is less than \(r\). Namely,
+\textbf{3. \(G\)-Function} -- The \(G\)-function measures the cumulative distribution function for the probability that the nearest neighbor distance is less than \(r\). Namely,
 \[G(r) = \mathbb{P}(D_i \leq r).\]
 In \textit{Figure \ref{fig:g_function}}, note that the empirical \(G\)-function is above the theoretical envelope for CSR. This result suggests that there is likely a clustering pattern in the locations of Starbucks stores in Shanghai.
 
@@ -441,7 +441,7 @@ In addition to density, \textit{Figure \ref{fig:tesselation}} below shows the Di
 
 \subsubsection{Point Process Models}
 
-To fully understand the distribution of Starbucks stores in Shanghai, we need to build point process models to capture the point pattern. For this study, I fitted 4 point process models and using each model, I simulated 3 point process in the study area to examine the extent to which the model fits the point process of Starbucks stores. \textit{Figure \ref{fig:sims}} below shows the simulations of point processes after fitting the models. Here is the description and analysis of each point process model:
+To fully understand the distribution of Starbucks stores in Shanghai, we need to build point process models to capture the point pattern. For this study, I fitted 4 point process models and using each model, I simulated 3 point processes in the study area to examine the extent to which the model fits the point process of Starbucks stores. \textit{Figure \ref{fig:sims}} below shows the simulations of point processes after fitting the models. Here is the description and analysis of each point process model:
 
 \begin{figure}[htbp]
     \begin{subfigure}[b]{0.48\textwidth}
@@ -475,17 +475,17 @@ To fully understand the distribution of Starbucks stores in Shanghai, we need to
     \label{fig:sims}
 \end{figure}
 
-\textbf{Homogeneous Point Process Model} -- This model assumes that the training point process is a homogeneous Poisson point process and thus the only parameter the model fits is the intensity parameter of the Poisson distribution. In this case, the point process model estimates that the intensity \(\lambda = 1.540 \times 10 ^ {-7}\). However, in the previous subsections, we already established that the point process of Starbucks stores in Shanghai is not a homogeneous process. Therefore, this model does not fit the point process well. We also reach this conclusion in \textit{Figure \ref{fig:hppm}} that there is obviously no clustering happening in the simulations.
+\textbf{1. Homogeneous Point Process Model} -- This model assumes that the training point process is a homogeneous Poisson point process and thus the only parameter the model fits is the intensity parameter of the Poisson distribution. In this case, the point process model estimates that the intensity \(\lambda = 1.540 \times 10 ^ {-7}\). However, in the previous subsections, we already established that the point process of Starbucks stores in Shanghai is not a homogeneous process. Therefore, this model does not fit the point process well. We also reach this conclusion in \textit{Figure \ref{fig:hppm}} that there is obviously no clustering happening in the simulations.
 
-\textbf{Point Process Model with Linear Trend} -- Instead of a homogeneous Poisson point process, this model assumes that there is a linear trend in the point process of the data. For this data, the model estimates that \(\log x\) is associated with a coefficient of 3.254 and \(\log y\) is associated with a coefficient of 89.217. Both coefficient estimates are statistically significant. This means that the farther to the north or the east, we would expect to see more Starbucks stores. Nevertheless, from \textit{Figure \ref{fig:linear_ppm}} we also decide that this model does not capture the pattern well because this linear trend is not definitive in the original dataset.
+\textbf{2. Point Process Model with Linear Trend} -- Instead of a homogeneous Poisson point process, this model assumes that there is a linear trend in the point process of the data. For this data, the model estimates that \(\log(x)\) is associated with a coefficient of 3.254 and \(\log(y)\) is associated with a coefficient of 89.217. Both coefficient estimates are statistically significant. This means that the farther to the north or the east, we would expect to see more Starbucks stores. Nevertheless, from \textit{Figure \ref{fig:linear_ppm}} we also decide that this model does not capture the pattern well because this linear trend is not definitive in the original dataset.
 
-\textbf{Cluster Process Models} -- \textit{Figures \ref{fig:thomas_ppm}} and \textit{\ref{fig:lgcp_ppm}} demonstrate simulations using two cluster models, fitted with different methods. The advantage of these models is that they assume a clustering process in the data, which is the case in the Starbucks data. Among these two models, I believe the LGCP model fits the Starbucks point process better than the Thomas model. For the Thomas model in \textit{Figure \ref{fig:thomas_ppm}}, we see no Starbucks stores outside of the clusters defined by the model, which is not the case in the original data. Contrarily, the LGCP model correctly captures the clustering nature of Starbucks stores while allowing for non-clustered Starbucks stores to be present.
+\textbf{3. Cluster Process Models} -- \textit{Figures \ref{fig:thomas_ppm}} and \textit{\ref{fig:lgcp_ppm}} demonstrate simulations using two cluster models, fitted with different methods. The advantage of these models is that they assume a clustering process in the data, which is the case in the Starbucks data. Among these two models, I believe the LGCP model fits the Starbucks point process better than the Thomas model. For the Thomas model in \textit{Figure \ref{fig:thomas_ppm}}, we see no Starbucks stores outside of the clusters defined by the model, which is not the case in the original data. Contrarily, the LGCP model correctly captures the clustering nature of Starbucks stores while allowing for non-clustered Starbucks stores to be present.
 
 \section{Conclusion}
 
 In short, this project consists of two types of spatial analysis -- areal analysis and point pattern analysis -- in order to discover and model the spatial patterns in the locations of Starbucks stores in Mainland China.
 
-In the areal analysis, we were interested in finding an autocorrelation in the number of Starbucks stores by province, that is, whether neighboring provinces have similar numbers of Starbucks stores. Exploratory Moran's \(I\) hypothesis tests revealed that there is a significant positive autocorrelation in the number of Starbucks stores and so we proceeded with fitting areal models. However, we discovered that GDP and population of a province are capable of explaining 71.5\% of the variability in the number of Starbucks stores, leaving the residuals spatially uncorrelated. This result was further confirmed by the statistically non-significant estimates in the spatial parameters in the spatial models. Overall, we concluded that GDP and population of a province greatly determine the number of Starbucks stores in a province.
+In the areal analysis, we were interested in finding an autocorrelation in the number of Starbucks stores by province, that is, whether neighboring provinces have similar numbers of Starbucks stores. Exploratory Moran's \(I\) hypothesis tests revealed that there is a significant positive autocorrelation in the number of Starbucks stores and so we proceeded with fitting areal models. However, we discovered that GDP and population of a province are capable of explaining 71.5\% of the variability in the number of Starbucks stores, leaving the residuals spatially uncorrelated. This result was further confirmed by the statistically non-significant estimates of the spatial parameters in the spatial models. Overall, we concluded that GDP and population of a province greatly determine the number of Starbucks stores in a province.
 
 In the point pattern analysis, we were curious of finding point patterns in the locations of Starbucks stores in Shanghai. Basic tests of CSR returned that the locations of Starbucks stores are not randomly distributed, and so we fitted kernel density estimations, Dirichlet tesselation, and point process models to capture the spatial patterns. Conclusively, we determined that there is a cluster of Starbucks stores at the center of Shanghai. As we move farther from the city center, there are fewer Starbucks stores.
 
